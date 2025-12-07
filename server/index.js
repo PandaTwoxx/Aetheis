@@ -36,11 +36,11 @@ mongoose.connect(uri, {
 app.get('/:package', async (req, res) => {
     const { package } = req.params;
     try {
-        const pkgs = await Package.find({'name': package});
-        if(pkgs.length === 0) {
+        const pkg = await Package.findOne({'name': package});
+        if(!pkg) {
             res.send("brew")
         } else {
-            res.send("custom " + pkgs[0].dependencies.join(" "))
+            res.send("custom " + pkg.dependencies.join(" "))
         }
     } catch (e) {
         res.status(500).json({ err: 'Failed to fetch packages' });
