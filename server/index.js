@@ -37,10 +37,15 @@ app.get('/:package', async (req, res) => {
     const { package } = req.params;
     try {
         const pkg = await Package.findOne({'name': package});
+        console.log(pkg);
         if(!pkg) {
             res.send("brew")
         } else {
-            res.send("custom " + pkg.dependencies.join(" "))
+            if(!pkg.dependencies) {
+                return res.send("custom")
+            }else{
+                res.send("custom " + pkg.dependencies.join(" "))
+            }
         }
     } catch (e) {
         res.status(500).json({ err: 'Failed to fetch packages' });
