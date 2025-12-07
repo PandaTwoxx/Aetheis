@@ -1,13 +1,12 @@
 package app
 
 import (
-	"os/exec"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"strings"
+	"os/exec"
 )
 
 func UninstallPackage(packageName string) error {
@@ -41,12 +40,12 @@ func UninstallPackage(packageName string) error {
 		return errors.New("package source is empty")
 	}
 
-	if PackageSource.Source == "brew"{
+	if PackageSource.Source == "brew" {
 		fmt.Printf("Uninstalling via Homebrew: %s\n...", PackageSource.Name)
 		exec.Command("brew", "uninstall", PackageSource.Name).Run()
-	} else{
+	} else {
 		fmt.Printf("Uninstalling via Shell Command: %s\n...", PackageSource.Source)
-		
+
 		resp, err := http.Get("https://aetheis.vercel.app/uninstall/" + packageName)
 
 		if err != nil {
@@ -68,19 +67,12 @@ func UninstallPackage(packageName string) error {
 			return errors.New("uninstall command is empty")
 		}
 
-		commands := strings.Split(shellCommand, "&&")
-		
-		for _, cmd := range commands {
-			parts := strings.Fields(strings.TrimSpace(cmd))
-			if len(parts) == 0 {
-				continue
-			}
-			execCmd := exec.Command(parts[0], parts[1:]...)
-			err := execCmd.Run()
-			if err != nil {
-				log.Fatalf("Package Uninstallation Failed: %v", err)
-				return err
-			}
+		execCmd := exec.Command("sh", "-c", shellCommand)
+
+		cmdErr := execCmd.Run()
+		if cmdErr != nil {
+			log.Fatalf("Package Uninstallation Failed: %v", cmdErr)
+			return cmdErr
 		}
 	}
 
