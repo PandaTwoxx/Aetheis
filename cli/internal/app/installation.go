@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type PackageSource struct {
@@ -21,7 +22,7 @@ func InstallPackage(packageName string) error {
 	}
 	fmt.Printf("Installing package: %s\n", packageName)
 
-	resp, err := http.Get("https://aetheis.vercel.app/source/" + packageName)
+	resp, err := http.Get("https://aetheis.vercel.app/" + packageName)
 
 	if err != nil {
 		log.Fatalf("Package Installation Failed: %v", err)
@@ -48,6 +49,44 @@ func InstallPackage(packageName string) error {
 	if PackageSource.Source == "brew"{
 		fmt.Printf("Installing via Homebrew: %s\n...", PackageSource.Name)
 		exec.Command("brew", "install", PackageSource.Name).Run()
+	} else{
+		fmt.Printf("Installing via Shell Command: %s\n...", PackageSource.Source)
+		
+		resp, err := http.Get("https://aetheis.vercel.app/install/" + packageName)
+
+		if err != nil {
+			log.Fatalf("Package Installation Failed: %v", err)
+			return err
+		}
+
+		defer resp.Body.Close()
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("Package Installation Failed: %v", err)
+		}
+
+		shellCommand := string(bodyBytes)
+
+		if shellCommand == "" {
+			log.Fatalf("Package Installation Failed: Install command not found")
+			return errors.New("install command is empty")
+		}
+
+		commands := strings.Split(shellCommand, "&&")
+		
+		for _, cmd := range commands {
+			parts := strings.Fields(strings.TrimSpace(cmd))
+			if len(parts) == 0 {
+				continue
+			}
+			execCmd := exec.Command(parts[0], parts[1:]...)
+			err := execCmd.Run()
+			if err != nil {
+				log.Fatalf("Package Installation Failed: %v", err)
+				return err
+			}
+		}
 	}
 
 	fmt.Printf("Package %s installed successfully.\n", packageName)

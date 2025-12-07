@@ -4,7 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-
+	"github.com/PandaTwoxx/aetheis/internal/app"
 	"github.com/spf13/cobra"
 )
 
@@ -32,5 +32,14 @@ For example, to uninstall a package:
 		
 			
 		fmt.Printf("Attempting to uninstall packages: %v\n", packageList)
+
+		for _, pkg := range packageList {
+			err := app.UninstallPackage(pkg)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to uninstall package %s: %v\n", pkg, err)
+			} else {
+				fmt.Printf("Successfully uninstalled package: %s\n", pkg)
+			}
+		}
 	},
 }
