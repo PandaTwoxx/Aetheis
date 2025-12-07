@@ -40,7 +40,7 @@ app.get('/:package', async (req, res) => {
         if(pkgs.length === 0) {
             res.send("brew")
         } else {
-            res.send("custom")
+            res.send("custom " + pkgs[0].dependencies.join(" "))
         }
     } catch (e) {
         res.status(500).json({ err: 'Failed to fetch packages' });
@@ -77,24 +77,4 @@ app.get('/uninstall/:package', async (req, res) => {
         res.status(500).json({ err: 'Failed to fetch package' });
     }
 });
-
-app.get('/addPackage/:name/:installCmds/:uninstallCmds/:key', async (req, res) => {
-    const { name, installCmds, uninstallCmds, key } = req.params;
-
-    if (key !== process.env.KEY) {
-        return res.status(403).json({ err: 'Unauthorized' });
-    }
-    try {
-        const newPkg = new Package({
-            name: name,
-            installCommands: installCmds,
-            uninstallCommands: uninstallCmds
-        });
-        await newPkg.save();
-        res.send('Package added successfully');
-    } catch (e) {
-        res.status(500).json({ err: 'Failed to add package' });
-    }
-});
-
 // The duplicate app.listen() call has been removed from here.

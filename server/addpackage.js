@@ -36,12 +36,22 @@ async function addPackage() {
         const installCmds = await askQuestion('package ic: ');
         const uninstallCmds = await askQuestion('package uc: ');
 
+        let dependancies = [];
+        while (true) {
+            const dep = await askQuestion('add dependancy (leave blank to finish): ');
+            if (dep.trim() === '') {
+                break;
+            }
+            dependancies.push(dep.trim());
+        }
+
         // 3. Close the readline interface after ALL input is collected
         rl.close();
 
         // 4. Create and Save the Package
         const newPkg = new Package({
             name: name,
+            dependencies: dependancies,
             installCommands: installCmds,
             uninstallCommands: uninstallCmds
         });
