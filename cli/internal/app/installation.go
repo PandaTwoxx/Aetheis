@@ -1,0 +1,55 @@
+package app
+
+import (
+	"os/exec"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+)
+
+type PackageSource struct {
+	Name   string
+	Source string
+}
+
+func InstallPackage(packageName string) error {
+	// Placeholder logic for installing a package
+	if packageName == "" {
+		return errors.New("package name cannot be empty")
+	}
+	fmt.Printf("Installing package: %s\n", packageName)
+
+	resp, err := http.Get("https://wpm.tickitechnology.com/source/" + packageName)
+
+	if err != nil {
+		log.Fatalf("Package Installation Failed: %v", err)
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Package Installation Failed: %v", err)
+	}
+
+	PackageSource := PackageSource{
+		Name:   packageName,
+		Source: string(bodyBytes),
+	}
+
+	if PackageSource.Source == "" {
+		log.Fatalf("Package Installation Failed: Package not found")
+		return errors.New("package source is empty")
+	}
+
+	if PackageSource.Source == "brew"{
+		fmt.Printf("Installing via Homebrew: %s\n...", PackageSource.Name)
+		exec.Command("brew", "install", PackageSource.Name).Run()
+	}
+
+	fmt.Printf("Package %s installed successfully.\n", packageName)
+	return nil
+}
