@@ -19,8 +19,29 @@ type PackageSource struct {
 	Dependencies []string
 }
 
-func InstallPackage(packageName string) error {
-	// Placeholder logic for installing a package
+func InstallPackage(packageName string, explicit bool) error {
+	// 1. Load Store
+	store, err := LoadPackageStore()
+	if err != nil {
+		log.Fatalf("Failed to load package store: %v", err)
+		return err
+	}
+
+	// 2. Check if already installed (optional, but good optimization)
+	// For now, we reinstall to ensure latest version or if something broke,
+	// but we should respect the 'explicit' flag update if it was previously implicit.
+	if existing := store.GetPackage(packageName); existing != nil {
+		if explicit && !existing.Explicit {
+			existing.Explicit = true
+			SavePackageStore(store)
+		}
+		fmt.Printf("Package %s is already installed.\n", packageName)
+		// We could return nil here, but maybe we want to verify dependencies again?
+		// Let's assume re-install is okay or we just return.
+		// For matching original behavior regarding dependencies, we might want to check them.
+		// But let's proceed with install to be safe.
+	}
+
 	if packageName == "" {
 		return errors.New("package name cannot be empty")
 	}
@@ -43,20 +64,25 @@ func InstallPackage(packageName string) error {
 
 	parsed := strings.Split(string(bodyBytes), " ")
 
-	PackageSource := PackageSource{
+	targetPackage := InstalledPackage{
 		Name:         packageName,
-		Source:       strings.TrimSpace(parsed[0]),
-		Dependencies: parsed[1:],
+		Explicit:     explicit,
+		Dependencies: []string{},
 	}
 
-	if PackageSource.Source == "" {
+	sourceCode := strings.TrimSpace(parsed[0])
+	if len(parsed) > 1 {
+		targetPackage.Dependencies = parsed[1:]
+	}
+
+	if sourceCode == "" {
 		log.Fatalf("Package Installation Failed: Package not found")
 		return errors.New("package source is empty")
 	}
 
-	if PackageSource.Source == "brew" {
-		fmt.Printf("Installing via Homebrew: %s\n...", PackageSource.Name)
-		exec.Command("brew", "install", PackageSource.Name).Run()
+	if sourceCode == "brew" {
+		fmt.Printf("Installing via Homebrew: %s\n...", targetPackage.Name)
+		exec.Command("brew", "install", targetPackage.Name).Run()
 	} else {
 		currentUser, err := user.Current()
 		if err != nil {
@@ -66,12 +92,13 @@ func InstallPackage(packageName string) error {
 
 		fmt.Printf("Checking dependencies for package: %s\n", packageName)
 
-		if len(PackageSource.Dependencies) > 0 {
-			for _, dependency := range PackageSource.Dependencies {
-				InstallPackage(dependency)
+		if len(targetPackage.Dependencies) > 0 {
+			for _, dependency := range targetPackage.Dependencies {
+				// Recursive install with explicit=false
+				InstallPackage(dependency, false)
 			}
 		}
-		fmt.Printf("Installing via Shell Command: %s\n...", PackageSource.Source)
+		fmt.Printf("Installing via Shell Command: %s\n...", sourceCode)
 
 		resp, err := http.Get("https://aetheis.vercel.app/install/" + packageName)
 
@@ -96,11 +123,11 @@ func InstallPackage(packageName string) error {
 		}
 
 		cacheDir := filepath.Join(currentUser.HomeDir, ".aetheis", "cache")
+		_ = os.MkdirAll(cacheDir, 0755) // Ensure cache dir exists
 		installPath := filepath.Join(cacheDir, "install_"+packageName+".sh")
 
 		_ = os.Remove(installPath)
-		os.Create(installPath)
-
+		// No need to Create then Open, just WriteFile or OpenFile with Create
 		fileInstruct, err := os.OpenFile(installPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
 
 		if err != nil {
@@ -109,33 +136,29 @@ func InstallPackage(packageName string) error {
 			return err
 		}
 
-		fileInstruct.Write([]byte(shellCommand + "\n"))
+		// Prepend shebang as per previous fix
+		fileInstruct.Write([]byte("#!/bin/sh\n" + shellCommand + "\n"))
 
-		defer fileInstruct.Close()
+		fileInstruct.Close()
 
 		exec.Command("chmod", "+x", installPath).Run()
 
-		execCmd := exec.Command(installPath)
+		execCmd := exec.Command("/bin/sh", installPath)
+		// Connect stdout/stderr to see output
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
 
 		cmdErr := execCmd.Run()
 		if cmdErr != nil {
 			log.Fatalf("Package Installation Failed: %v", cmdErr)
 			return cmdErr
 		}
+	}
 
-		aetheisDir := filepath.Join(currentUser.HomeDir, ".aetheis")
-		installedPkgsPath := filepath.Join(aetheisDir, "install_packages.json")
-		file, err := os.OpenFile(installedPkgsPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
-		if err != nil {
-			// Handle error
-			log.Fatalf("Package Installation Failed: %v", err)
-			return err
-		}
-
-		file.Write([]byte(packageName + "\n"))
-
-		defer file.Close()
+	// Save to Store
+	store.AddPackage(targetPackage)
+	if err := SavePackageStore(store); err != nil {
+		log.Printf("Warning: Failed to save package store: %v", err)
 	}
 
 	fmt.Printf("Package %s installed successfully.\n", packageName)

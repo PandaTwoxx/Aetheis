@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+
 	"github.com/PandaTwoxx/aetheis/internal/app"
 	"github.com/spf13/cobra"
 )
@@ -27,14 +28,13 @@ For example, to install a package:
 			cmd.Help()
 			os.Exit(1)
 		}
-		
+
 		packageList := args
-		
-			
+
 		fmt.Printf("Attempting to install packages: %v\n", packageList)
 
 		for _, pkg := range packageList {
-			err := app.InstallPackage(pkg)
+			err := app.InstallPackage(pkg, true)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Failed to install package %s: %v\n", pkg, err)
 			} else {
