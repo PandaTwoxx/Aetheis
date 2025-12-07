@@ -44,6 +44,7 @@ app.get('/:package', async (req, res) => {
         }
     } catch (e) {
         res.status(500).json({ err: 'Failed to fetch packages' });
+        console.error(e);
     }
         
 });
