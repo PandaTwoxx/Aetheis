@@ -21,7 +21,7 @@ func InstallPackage(packageName string) error {
 	}
 	fmt.Printf("Installing package: %s\n", packageName)
 
-	resp, err := http.Get("https://wpm.tickitechnology.com/source/" + packageName)
+	resp, err := http.Get("https://aetheis.vercel.app/source/" + packageName)
 
 	if err != nil {
 		log.Fatalf("Package Installation Failed: %v", err)
