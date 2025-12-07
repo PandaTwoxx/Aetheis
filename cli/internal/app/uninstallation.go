@@ -75,11 +75,14 @@ func UninstallPackage(packageName string) error {
 						shellCommand = strings.ReplaceAll(shellCommand, "curl -fsSLO", "curl -fsSL")
 						shellCommand = strings.ReplaceAll(shellCommand, "curl -O", "curl")
 
-						// FIX: The script writes to ~/.aetheis/uninstall/uninstall.sh but executes uninstall.sh (CWD).
+						// FIX: The server sends `mkdir -p ~/.aetheis/uninstall`. We want to use `~/.aetheis/cache`.
+						shellCommand = strings.ReplaceAll(shellCommand, "~/.aetheis/uninstall", "~/.aetheis/cache")
+
+						// FIX: The script writes to ~/.aetheis/cache/uninstall.sh but executes uninstall.sh (CWD).
 						// We fix the execution path AND patch the script to bypass faulty sudo check (which prompts for password).
 						// We do this by replacing calls ` execute_sudo` with ` `. This un-wraps the command.
 						// We match space-prefixed execute_sudo to avoid breaking the function definition `execute_sudo() {`.
-						shellCommand = strings.ReplaceAll(shellCommand, "/bin/bash uninstall.sh", "sed -i.bak 's/ execute_sudo/ /g' ~/.aetheis/uninstall/uninstall.sh && /bin/bash ~/.aetheis/uninstall/uninstall.sh")
+						shellCommand = strings.ReplaceAll(shellCommand, "/bin/bash uninstall.sh", "sed -i.bak 's/ execute_sudo/ /g' ~/.aetheis/cache/uninstall.sh && /bin/bash ~/.aetheis/cache/uninstall.sh")
 
 						// FIX: Shell doesn't expand '~' in '--path=~...' arguments. Use $HOME instead.
 						shellCommand = strings.ReplaceAll(shellCommand, "~/", "$HOME/")
