@@ -117,9 +117,10 @@ app.get('/addUser/:user/:password', async (req, res) => {
     const { user, password } = req.params;
     try {
         const randomBytes = crypto.randomBytes(16);
+        const hashedPassword = await hashPassword(password);
         const pkg = User.create({
             name: user,
-            password: hashPassword(password),
+            password: hashedPassword,
             token: randomBytes.toString('hex')
         });
 
