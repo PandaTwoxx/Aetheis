@@ -53,7 +53,8 @@ async function addPackage() {
             name: name,
             dependencies: dependancies,
             installCommands: installCmds,
-            uninstallCommands: uninstallCmds
+            uninstallCommands: uninstallCmds,
+            owner: 'panda'
         });
         
         await newPkg.save();
