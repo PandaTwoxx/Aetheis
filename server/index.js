@@ -155,14 +155,12 @@ app.post('/addPackage/:token/:name/:installCmds/:uninstallCmds/:dependencies', a
         if (!usr) {
             return res.status(404).json({ err: 'User not found' });
         }
-        if (usr.name != name) {
-            return res.status(404).json({ err: 'User not found' });
-        }
         const pkg = Package.create({
             name: name,
             installCommands: installCmds,
             uninstallCommands: uninstallCmds,
-            dependencies: dependencies.split(' ')
+            dependencies: dependencies.split(' '),
+            owner: usr.name
         });
         res.send('Package added successfully.');
     } catch (e) {
@@ -178,18 +176,57 @@ app.post('/addPackage/:token/:name/:installCmds/:uninstallCmds/', async (req, re
         if (!usr) {
             return res.status(404).json({ err: 'User not found' });
         }
-        if (usr.name != name) {
-            return res.status(404).json({ err: 'User not found' });
-        }
         const pkg = Package.create({
             name: name,
             installCommands: installCmds,
             uninstallCommands: uninstallCmds,
-            dependencies: []
+            dependencies: [],
+            owner: usr.name
         });
         res.send('Package added successfully.');
     } catch (e) {
         res.status(500).json({ err: 'Failed to add package' });
+        console.error(e);
+    }
+});
+
+app.post('/updatePackage/:token/:name/:installCmds/:uninstallCmds/:dependencies', async (req, res) => {
+    const { token, name, installCmds, uninstallCmds, dependencies } = req.params;
+    try {
+        const usr = User.findOne({ 'token': token });
+        if (!usr) {
+            return res.status(404).json({ err: 'User not found' });
+        }
+        const pkg = Package.findOne({ 'name': name, 'owner': usr.name });
+        if (!pkg) {
+            return res.status(404).json({ err: 'Package not found' });
+        }
+        pkg.installCommands = installCmds;
+        pkg.uninstallCommands = uninstallCmds;
+        pkg.dependencies = dependencies.split(' ');
+        await pkg.save();
+        res.send('Package updated successfully.');
+    } catch (e) {
+        res.status(500).json({ err: 'Failed to update package' });
+        console.error(e);
+    }
+});
+
+app.post('/deletePackage/:token/:name', async (req, res) => {
+    const { token, name } = req.params;
+    try {
+        const usr = User.findOne({ 'token': token });
+        if (!usr) {
+            return res.status(404).json({ err: 'User not found' });
+        }
+        const pkg = Package.findOne({ 'name': name, 'owner': usr.name });
+        if (!pkg) {
+            return res.status(404).json({ err: 'Package not found' });
+        }
+        await pkg.deleteOne();
+        res.send('Package deleted successfully.');
+    } catch (e) {
+        res.status(500).json({ err: 'Failed to delete package' });
         console.error(e);
     }
 });

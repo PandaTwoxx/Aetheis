@@ -8,7 +8,8 @@ const pkgSch = new mongoose.Schema({
     unique: true    // No two packages can have the same name
   },
   installCommands: String,
-    uninstallCommands: String
+    uninstallCommands: String,
+    owner: String
 });
 
 // Export the Schema wrapped in a Model
