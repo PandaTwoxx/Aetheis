@@ -113,7 +113,7 @@ app.get('/uninstall/:package', async (req, res) => {
     }
 });
 
-app.get('addUser/:user/:password', async (req, res) => {
+app.get('/addUser/:user/:password', async (req, res) => {
     const { user, password } = req.params;
     try {
         const randomBytes = crypto.randomBytes(16);
