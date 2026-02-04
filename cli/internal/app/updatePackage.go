@@ -13,14 +13,14 @@ func UpdatePackage(packageName string) error {
 	uninstallScript := ""
 
 	fmt.Println("Enter the install script for the package:")
-	fmt.Scan(&installScript)
+	fmt.Scanln(&installScript)
 	fmt.Println("Enter the uninstall script for the package:")
-	fmt.Scan(&uninstallScript)
+	fmt.Scanln(&uninstallScript)
 	
 	dependencyList := ""
 
 	fmt.Println("Enter the dependencies for the package (separated by spaces):")
-	fmt.Scan(&dependencyList)
+	fmt.Scanln(&dependencyList)
 
 	user, err := user.Current()
 	if err != nil {

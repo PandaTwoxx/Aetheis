@@ -14,6 +14,7 @@ var updatePackageCmd = &cobra.Command{
 	Long: `The 'updatePackage' command is used to update a package in Aetheis.
 For example, to update a package:
   atheis updatePackage <package>`,
+  	Args: cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		err := app.UpdatePackage(args[0])
