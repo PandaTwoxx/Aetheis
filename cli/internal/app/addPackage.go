@@ -63,6 +63,10 @@ func AddPackage(packageName string) error {
 	}
 	defer resp.Body.Close()
 
+	if err := CheckAPIError(resp); err != nil {
+		return err
+	}
+
 	fmt.Println("Package added successfully.")
 	
 	return nil

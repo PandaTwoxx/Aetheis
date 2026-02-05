@@ -51,8 +51,8 @@ func UninstallPackage(packageName string) error {
 
 		if resp.StatusCode == http.StatusNotFound {
 			fmt.Printf("Package definition not found on server. Proceeding with removal from local store.\n")
-		} else if resp.StatusCode != http.StatusOK {
-			log.Printf("Warning: Received status %d from server. Proceeding with best effort.\n", resp.StatusCode)
+		} else if err := CheckAPIError(resp); err != nil {
+			return err
 		} else {
 			bodyBytes, _ := io.ReadAll(resp.Body)
 			sourceInfo := strings.TrimSpace(strings.Split(string(bodyBytes), " ")[0])
@@ -64,42 +64,35 @@ func UninstallPackage(packageName string) error {
 				fmt.Printf("Uninstalling via Shell Command: %s\n...", sourceInfo)
 				// Fetch uninstall script
 				resp, err := http.Get("https://aetheis.vercel.app/uninstall/" + packageName)
-				if err == nil {
-					defer resp.Body.Close()
-					if resp.StatusCode == http.StatusOK {
-						uninstallBytes, _ := io.ReadAll(resp.Body)
-						shellCommand := string(uninstallBytes)
+				if err != nil {
+					return fmt.Errorf("failed to fetch uninstall script: %w", err)
+				}
+				defer resp.Body.Close()
+				if err := CheckAPIError(resp); err != nil {
+					return err
+				}
+				uninstallBytes, _ := io.ReadAll(resp.Body)
+				shellCommand := string(uninstallBytes)
 
-						// FIX: The server sometimes sends `curl -fsSLO ... > ...`, which breaks because -O writes to file and stdout is empty.
-						// We replace `-fsSLO` with `-fsSL` so it writes to stdout as expected by the redirection.
-						shellCommand = strings.ReplaceAll(shellCommand, "curl -fsSLO", "curl -fsSL")
-						shellCommand = strings.ReplaceAll(shellCommand, "curl -O", "curl")
+				// FIX: The server sometimes sends `curl -fsSLO ... > ...`, which breaks because -O writes to file and stdout is empty.
+				shellCommand = strings.ReplaceAll(shellCommand, "curl -fsSLO", "curl -fsSL")
+				shellCommand = strings.ReplaceAll(shellCommand, "curl -O", "curl")
 
-						// FIX: The server sends `mkdir -p ~/.aetheis/uninstall`. We want to use `~/.aetheis/cache`.
-						shellCommand = strings.ReplaceAll(shellCommand, "~/.aetheis/uninstall", "~/.aetheis/cache")
+				// FIX: The server sends `mkdir -p ~/.aetheis/uninstall`. We want to use `~/.aetheis/cache`.
+				shellCommand = strings.ReplaceAll(shellCommand, "~/.aetheis/uninstall", "~/.aetheis/cache")
 
-						// FIX: The script writes to ~/.aetheis/cache/uninstall.sh but executes uninstall.sh (CWD).
-						// We fix the execution path AND patch the script to bypass faulty sudo check (which prompts for password).
-						// We do this by replacing calls ` execute_sudo` with ` `. This un-wraps the command.
-						// We match space-prefixed execute_sudo to avoid breaking the function definition `execute_sudo() {`.
-						shellCommand = strings.ReplaceAll(shellCommand, "/bin/bash uninstall.sh", "sed -i.bak 's/ execute_sudo/ /g' ~/.aetheis/cache/uninstall.sh && /bin/bash ~/.aetheis/cache/uninstall.sh")
+				// FIX: The script writes to ~/.aetheis/cache/uninstall.sh but executes uninstall.sh (CWD).
+				shellCommand = strings.ReplaceAll(shellCommand, "/bin/bash uninstall.sh", "sed -i.bak 's/ execute_sudo/ /g' ~/.aetheis/cache/uninstall.sh && /bin/bash ~/.aetheis/cache/uninstall.sh")
 
-						// FIX: Shell doesn't expand '~' in '--path=~...' arguments. Use $HOME instead.
-						shellCommand = strings.ReplaceAll(shellCommand, "~/", "$HOME/")
+				// FIX: Shell doesn't expand '~' in '--path=~...' arguments. Use $HOME instead.
+				shellCommand = strings.ReplaceAll(shellCommand, "~/", "$HOME/")
 
-						if shellCommand != "" {
-							// Run safely
-							execCmd := exec.Command("sh", "-c", shellCommand)
-							execCmd.Stdout = os.Stdout
-							execCmd.Stderr = os.Stderr
-							if err := execCmd.Run(); err != nil {
-								// If script failed, maybe we should stop?
-								// Or warn and continue to remove from store?
-								// Use user preference? For now, we warn but allow removal from store
-								// so user isn't stuck with a "zombie" package they can't uninstall.
-								log.Printf("Warning: Uninstall script failed: %v. Removing from store anyway.", err)
-							}
-						}
+				if shellCommand != "" {
+					execCmd := exec.Command("sh", "-c", shellCommand)
+					execCmd.Stdout = os.Stdout
+					execCmd.Stderr = os.Stderr
+					if err := execCmd.Run(); err != nil {
+						log.Printf("Warning: Uninstall script failed: %v. Removing from store anyway.", err)
 					}
 				}
 			}

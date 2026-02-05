@@ -63,6 +63,10 @@ func UpdatePackage(packageName string) error {
 	}
 	defer resp.Body.Close()
 
+	if err := CheckAPIError(resp); err != nil {
+		return err
+	}
+
 	fmt.Println("Package updated successfully.")
 	
 	return nil

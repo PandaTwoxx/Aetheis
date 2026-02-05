@@ -48,18 +48,18 @@ func InstallPackage(packageName string, explicit bool) error {
 	fmt.Printf("Installing package: %s\n", packageName)
 
 	resp, err := http.Get("https://aetheis.vercel.app/" + packageName)
-
 	if err != nil {
-		log.Fatalf("Package Installation Failed: %v", err)
+		return fmt.Errorf("package installation failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if err := CheckAPIError(resp); err != nil {
 		return err
 	}
 
-	defer resp.Body.Close()
-
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Package Installation Failed: %v", err)
-		return err
+		return fmt.Errorf("package installation failed: %w", err)
 	}
 
 	parsed := strings.Split(string(bodyBytes), " ")
@@ -76,8 +76,7 @@ func InstallPackage(packageName string, explicit bool) error {
 	}
 
 	if sourceCode == "" {
-		log.Fatalf("Package Installation Failed: Package not found")
-		return errors.New("package source is empty")
+		return errors.New("package not found")
 	}
 
 	if sourceCode == "brew" {
@@ -101,25 +100,23 @@ func InstallPackage(packageName string, explicit bool) error {
 		fmt.Printf("Installing via Shell Command: %s\n...", sourceCode)
 
 		resp, err := http.Get("https://aetheis.vercel.app/install/" + packageName)
-
 		if err != nil {
-			log.Fatalf("Package Installation Failed: %v", err)
+			return fmt.Errorf("package installation failed: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if err := CheckAPIError(resp); err != nil {
 			return err
 		}
-
-		defer resp.Body.Close()
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatalf("Package Installation Failed: %v", err)
-			return err
+			return fmt.Errorf("package installation failed: %w", err)
 		}
 
-		shellCommand := string(bodyBytes)
-
+		shellCommand := strings.TrimSpace(string(bodyBytes))
 		if shellCommand == "" {
-			log.Fatalf("Package Installation Failed: Install command not found")
-			return errors.New("install command is empty")
+			return errors.New("install command not found")
 		}
 
 		cacheDir := filepath.Join(currentUser.HomeDir, ".aetheis", "cache")
