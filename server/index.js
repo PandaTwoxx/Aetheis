@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const Package = require('./Package');
 const User = require('./User');
 const app = exp();
+app.use(exp.json());
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 
@@ -149,18 +150,21 @@ app.get('/login/:user/:password', async (req, res) => {
     }
 });
 
-app.post('/addPackage/:token/:name/:installCmds/:uninstallCmds/:dependencies', async (req, res) => {
-    const { token, name, installCmds, uninstallCmds, dependencies } = req.params;
+app.post('/addPackage', async (req, res) => {
+    const { token, name, installCommands, uninstallCommands, dependencies } = req.body;
     try {
-        const usr = User.findOne({ 'token': token });
+        if (!token || !name || !installCommands || !uninstallCommands) {
+            return res.status(400).json({ err: 'Missing required fields: token, name, installCommands, uninstallCommands' });
+        }
+        const usr = await User.findOne({ token });
         if (!usr) {
             return res.status(404).json({ err: 'User not found' });
         }
-        const pkg = Package.create({
-            name: name,
-            installCommands: installCmds,
-            uninstallCommands: uninstallCmds,
-            dependencies: dependencies.split(' '),
+        await Package.create({
+            name,
+            installCommands,
+            uninstallCommands,
+            dependencies: Array.isArray(dependencies) ? dependencies : [],
             owner: usr.name
         });
         res.send('Package added successfully.');
@@ -170,41 +174,23 @@ app.post('/addPackage/:token/:name/:installCmds/:uninstallCmds/:dependencies', a
     }
 });
 
-app.post('/addPackage/:token/:name/:installCmds/:uninstallCmds/', async (req, res) => {
-    const { token, name, installCmds, uninstallCmds } = req.params;
+app.post('/updatePackage', async (req, res) => {
+    const { token, name, installCommands, uninstallCommands, dependencies } = req.body;
     try {
-        const usr = User.findOne({ 'token': token });
+        if (!token || !name || !installCommands || !uninstallCommands) {
+            return res.status(400).json({ err: 'Missing required fields: token, name, installCommands, uninstallCommands' });
+        }
+        const usr = await User.findOne({ token });
         if (!usr) {
             return res.status(404).json({ err: 'User not found' });
         }
-        const pkg = Package.create({
-            name: name,
-            installCommands: installCmds,
-            uninstallCommands: uninstallCmds,
-            dependencies: [],
-            owner: usr.name
-        });
-        res.send('Package added successfully.');
-    } catch (e) {
-        res.status(500).json({ err: 'Failed to add package' });
-        console.error(e);
-    }
-});
-
-app.post('/updatePackage/:token/:name/:installCmds/:uninstallCmds/:dependencies', async (req, res) => {
-    const { token, name, installCmds, uninstallCmds, dependencies } = req.params;
-    try {
-        const usr = User.findOne({ 'token': token });
-        if (!usr) {
-            return res.status(404).json({ err: 'User not found' });
-        }
-        const pkg = Package.findOne({ 'name': name, 'owner': usr.name });
+        const pkg = await Package.findOne({ name, owner: usr.name });
         if (!pkg) {
             return res.status(404).json({ err: 'Package not found' });
         }
-        pkg.installCommands = installCmds;
-        pkg.uninstallCommands = uninstallCmds;
-        pkg.dependencies = dependencies.split(' ');
+        pkg.installCommands = installCommands;
+        pkg.uninstallCommands = uninstallCommands;
+        pkg.dependencies = Array.isArray(dependencies) ? dependencies : [];
         await pkg.save();
         res.send('Package updated successfully.');
     } catch (e) {
