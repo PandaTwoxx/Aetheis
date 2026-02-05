@@ -63,7 +63,7 @@ mongoose.connect(uri, {
     });
 
 // Example route
-app.get('/:package', async (req, res) => {
+app.get('/pkg/:package', async (req, res) => {
     const { package } = req.params;
     try {
         const pkg = await Package.findOne({ 'name': package });

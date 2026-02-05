@@ -43,7 +43,7 @@ func UninstallPackage(packageName string) error {
 	// We should probably re-fetch to get the uninstall command/type, similar to Install.
 	// Existing uninstallation code did exactly that (fetch URL).
 
-	resp, err := http.Get("https://aetheis.vercel.app/" + packageName)
+	resp, err := http.Get("https://aetheis.vercel.app/pkg/" + packageName)
 	if err != nil {
 		log.Printf("Warning: Failed to fetch package info for uninstall: %v. Proceeding with removal from store.", err)
 	} else {

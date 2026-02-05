@@ -47,7 +47,7 @@ func InstallPackage(packageName string, explicit bool) error {
 	}
 	fmt.Printf("Installing package: %s\n", packageName)
 
-	resp, err := http.Get("https://aetheis.vercel.app/" + packageName)
+	resp, err := http.Get("https://aetheis.vercel.app/pkg/" + packageName)
 	if err != nil {
 		return fmt.Errorf("package installation failed: %w", err)
 	}
