@@ -88,6 +88,24 @@ app.get('/health', (req, res) => {
     res.send('Aetheis Package Server is running.');
 });
 
+app.get('/packages', async (req, res) => {
+    try {
+        const filter = {};
+        const { name, owner } = req.query;
+        if (name) {
+            filter.name = { $regex: name, $options: 'i' };
+        }
+        if (owner) {
+            filter.owner = { $regex: owner, $options: 'i' };
+        }
+        const packages = await Package.find(filter, 'name owner dependencies').lean();
+        return res.json(packages);
+    } catch (e) {
+        res.status(500).json({ err: 'Failed to fetch packages' });
+        console.error(e);
+    }
+});
+
 app.get('/install/:package', async (req, res) => {
     const { package } = req.params;
     try {
