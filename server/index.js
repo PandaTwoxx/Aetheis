@@ -184,9 +184,12 @@ app.post('/updatePackage', async (req, res) => {
         if (!usr) {
             return res.status(404).json({ err: 'User not found' });
         }
-        const pkg = await Package.findOne({ name, owner: usr.name });
+        const pkg = await Package.findOne({ name });
         if (!pkg) {
             return res.status(404).json({ err: 'Package not found' });
+        }
+        if (pkg.owner !== usr.name) {
+            return res.status(403).json({ err: 'You are not the owner of this package' });
         }
         pkg.installCommands = installCommands;
         pkg.uninstallCommands = uninstallCommands;
@@ -202,13 +205,16 @@ app.post('/updatePackage', async (req, res) => {
 app.post('/deletePackage/:token/:name', async (req, res) => {
     const { token, name } = req.params;
     try {
-        const usr = User.findOne({ 'token': token });
+        const usr = await User.findOne({ token });
         if (!usr) {
             return res.status(404).json({ err: 'User not found' });
         }
-        const pkg = Package.findOne({ 'name': name, 'owner': usr.name });
+        const pkg = await Package.findOne({ name });
         if (!pkg) {
             return res.status(404).json({ err: 'Package not found' });
+        }
+        if (pkg.owner !== usr.name) {
+            return res.status(403).json({ err: 'You are not the owner of this package' });
         }
         await pkg.deleteOne();
         res.send('Package deleted successfully.');
