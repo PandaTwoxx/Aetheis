@@ -36,6 +36,7 @@ func InstallPackage(packageName string, explicit bool) error {
 			SavePackageStore(store)
 		}
 		fmt.Printf("Package %s is already installed.\n", packageName)
+		return nil
 		// We could return nil here, but maybe we want to verify dependencies again?
 		// Let's assume re-install is okay or we just return.
 		// For matching original behavior regarding dependencies, we might want to check them.
