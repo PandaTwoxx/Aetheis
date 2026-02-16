@@ -1,26 +1,31 @@
 package app
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"os"
 	"net/http"
+	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 )
 
 func UpdatePackage(packageName string) error {
-	installScript := ""
-	uninstallScript := ""
+	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("Enter the install script for the package:")
-	fmt.Scan(&installScript)
+	installScript, _ := reader.ReadString('\n')
+	installScript = strings.TrimSpace(installScript)
+
 	fmt.Println("Enter the uninstall script for the package:")
-	fmt.Scan(&uninstallScript)
-	
-	dependencyList := ""
+	uninstallScript, _ := reader.ReadString('\n')
+	uninstallScript = strings.TrimSpace(uninstallScript)
 
 	fmt.Println("Enter the dependencies for the package (separated by spaces):")
-	fmt.Scan(&dependencyList)
+	dependencyList, _ := reader.ReadString('\n')
+	dependencyList = strings.TrimSpace(dependencyList)
 
 	user, err := user.Current()
 	if err != nil {
@@ -28,21 +33,39 @@ func UpdatePackage(packageName string) error {
 	}
 
 	path := filepath.Join(user.HomeDir, ".aetheis", "token")
-	
+
 	tokenFile, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-	token := string(tokenFile)
+	token := strings.TrimSpace(string(tokenFile))
 
+	dependencies := []string{}
+	if dependencyList != "" {
+		dependencies = strings.Split(dependencyList, " ")
+	}
 
-	uploadLink := "https://aetheis.vercel.app/updatePackage/" + token + "/" + packageName + "/" + installScript + "/" + uninstallScript + "/" + dependencyList
+	body, err := json.Marshal(map[string]interface{}{
+		"token":             token,
+		"name":              packageName,
+		"installCommands":   installScript,
+		"uninstallCommands": uninstallScript,
+		"dependencies":      dependencies,
+	})
+	if err != nil {
+		return err
+	}
 
-	resp, err := http.Post(uploadLink, "application/json", nil)
+	uploadLink := "https://aetheis.vercel.app/updatePackage"
+	resp, err := http.Post(uploadLink, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if err := CheckAPIError(resp); err != nil {
+		return err
+	}
 
 	fmt.Println("Package updated successfully.")
 	

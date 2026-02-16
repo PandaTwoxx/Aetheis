@@ -10,7 +10,7 @@ You can install Aetheis two ways
 curl -sL https://sc.warmraisin.com/aetheis/install.sh | bash
 ```
 
-### Without sude
+### Without sudo
 
 ```bash
 curl -sL https://sc.warmraisin.com/aetheis/install.sh | bash -s -- --local

@@ -8,6 +8,7 @@ import (
 var signupCmd = &cobra.Command{
 	Use:   "signup",
 	Short: "Signup to Aetheis",
+	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		app.Signup(args[0], args[1])
 	},

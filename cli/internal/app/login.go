@@ -2,12 +2,11 @@ package app
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
-	"net/http"
-	"log"
-	"io"
 )
 
 func Login(username string, password string) error {
@@ -17,20 +16,17 @@ func Login(username string, password string) error {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatalf("Error making GET request: %v", err)
-		return err
+		return fmt.Errorf("error making request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Error logging in: %v", resp.Status)
-		return fmt.Errorf("error logging in: %v", resp.Status)
+	if err := CheckAPIError(resp); err != nil {
+		return err
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Error reading response body: %v", err)
-		return err
+		return fmt.Errorf("error reading response: %w", err)
 	}
 
 	usr, err := user.Current()

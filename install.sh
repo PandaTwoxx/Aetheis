@@ -2,7 +2,7 @@
 set -e
 
 APP_NAME="aetheis"
-DOWNLOAD_URL="https://sc.warmraisin.com/aetheis/bin/aetheis"
+DOWNLOAD_URL="https://raw.githubusercontent.com/PandaTwoxx/Aetheis/refs/heads/main/cli/bin/aetheis"
 
 # Colors
 GREEN='\033[0;32m'
@@ -57,13 +57,27 @@ chmod +x "$TEMP_DIR/$APP_NAME"
 echo -e "📂 Installing to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 
+TARGET_PATH="$INSTALL_DIR/$APP_NAME"
+
+# If existing binary exists, replace it
+if [ -f "$TARGET_PATH" ]; then
+    echo -e "${YELLOW}♻️  Existing $APP_NAME found. Replacing with updated version...${NC}"
+    if [ "$MODE" == "system" ] && [ ! -w "$INSTALL_DIR" ]; then
+        sudo rm -f "$TARGET_PATH"
+    else
+        rm -f "$TARGET_PATH"
+    fi
+else
+    echo -e "${GREEN}🆕 Fresh install detected.${NC}"
+fi
+
 if [ "$MODE" == "local" ]; then
-    mv "$TEMP_DIR/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
-    
+    mv -f "$TEMP_DIR/$APP_NAME" "$TARGET_PATH"
+
     # Update zshrc
     RC_FILE="$HOME/.zshrc"
     EXPORT_CMD="export PATH=\"$HOME/.aetheis/bin:\$PATH\""
-    
+
     if ! grep -Fq "$HOME/.aetheis/bin" "$RC_FILE"; then
         echo -e "${YELLOW}📝 Adding $INSTALL_DIR to $RC_FILE...${NC}"
         echo "" >> "$RC_FILE"
@@ -75,12 +89,13 @@ if [ "$MODE" == "local" ]; then
     fi
 else
     if [ -w "$INSTALL_DIR" ]; then
-        mv "$TEMP_DIR/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
+        mv -f "$TEMP_DIR/$APP_NAME" "$TARGET_PATH"
     else
-        echo "Requires sudo privileges to move binary to $INSTALL_DIR"
-        sudo mv "$TEMP_DIR/$APP_NAME" "$INSTALL_DIR/$APP_NAME"
+        echo "Requires sudo privileges to install to $INSTALL_DIR"
+        sudo mv -f "$TEMP_DIR/$APP_NAME" "$TARGET_PATH"
     fi
 fi
+
 
 echo -e "${GREEN}✅ Successfully installed $APP_NAME!${NC}"
 echo -e "Run '${APP_NAME} help' to get started."
