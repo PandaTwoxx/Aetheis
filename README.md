@@ -7,11 +7,11 @@ You can install Aetheis two ways
 ### With sudo
 
 ```bash
-curl -sL https://sc.warmraisin.com/aetheis/install.sh | bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/PandaTwoxx/Aetheis/refs/heads/main/install.sh)"
 ```
 
 ### Without sudo
 
 ```bash
-curl -sL https://sc.warmraisin.com/aetheis/install.sh | bash -s -- --local
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/PandaTwoxx/Aetheis/refs/heads/main/install.sh)" -- --local
 ```
