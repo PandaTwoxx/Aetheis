@@ -132,6 +132,22 @@ app.get('/uninstall/:package', async (req, res) => {
     }
 });
 
+app.get('/update/:package', async (req, res) => {
+    const { package } = req.params;
+    try {
+        const pkg = await Package.findOne({ 'name': package });
+        if (!pkg) {
+            return res.status(404).json({ err: 'Package not found' });
+        }
+        if(!pkg.updateCommands){
+            res.send(pkg.installCommands);
+        }
+        res.send(pkg.updateCommands)
+    } catch (e) {
+        res.status(500).json({ err: 'Failed to fetch package' });
+    }
+});
+
 app.get('/addUser/:user/:password', async (req, res) => {
     const { user, password } = req.params;
     try {

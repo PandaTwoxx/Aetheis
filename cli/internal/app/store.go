@@ -138,3 +138,11 @@ func (s *PackageStore) IsPackageUsedByOthers(name string) (string, bool) {
 	}
 	return "", false
 }
+
+func (s *PackageStore) ListPackages() []string {
+	var names []string
+	for _, p := range s.Packages {
+		names = append(names, p.Name)
+	}
+	return names
+}

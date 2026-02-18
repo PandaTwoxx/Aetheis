@@ -9,6 +9,7 @@ const pkgSch = new mongoose.Schema({
   },
   installCommands: String,
   uninstallCommands: String,
+  updateCommands: String,
   dependencies: [String],
   owner: String
 });
