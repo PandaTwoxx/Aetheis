@@ -33,8 +33,50 @@ func Update(args []string) error {
 		}
 		for _, pkg := range store.ListPackages() {
 			fmt.Printf("Updating package: %s\n", pkg)
-			if err := Update([]string{pkg}); err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to update package %s: %v\n", pkg, err)
+			if pkg == "brew" || pkg == "brew-local"{
+				currentUser, err := user.Current()
+				if err != nil {
+					log.Fatalf("Package Update Failed: %v", err)
+					return err
+				}
+				cacheDir := filepath.Join(currentUser.HomeDir, ".aetheis", "cache")
+				_ = os.MkdirAll(cacheDir, 0755) // Ensure cache dir exists
+				installPath := filepath.Join(cacheDir, "install_"+pkg+".sh")
+
+				_ = os.Remove(installPath)
+				// No need to Create then Open, just WriteFile or OpenFile with Create
+				fileInstruct, err := os.OpenFile(installPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+
+				if err != nil {
+					// Handle error
+					log.Fatalf("Package Update Failed: %v", err)
+					return err
+				}
+				fileInstruct.Write([]byte("#!/bin/sh\n" + "brew update" + "\n"))
+
+				fileInstruct.Close()
+
+				exec.Command("chmod", "+x", installPath).Run()
+
+				execCmd := exec.Command("/bin/sh", installPath)
+				// Connect stdout/stderr to see output
+				execCmd.Stdout = os.Stdout
+				execCmd.Stderr = os.Stderr
+
+				cmdErr := execCmd.Run()
+				if cmdErr != nil {
+					log.Fatalf("Package Update Failed: %v", cmdErr)
+					return cmdErr
+				}
+			} else if pkg == "aetheis" {
+				fmt.Println("Updating aetheis...")
+				if err := Update([]string{pkg}); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to update aetheis: %v\n", err)
+				}
+			} else {
+				if err := Update([]string{pkg}); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to update package %s: %v\n", pkg, err)
+				}
 			}
 		}
 	} else {
