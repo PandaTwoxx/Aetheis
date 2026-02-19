@@ -185,10 +185,10 @@ app.get('/login/:user/:password', async (req, res) => {
 });
 
 app.post('/addPackage', async (req, res) => {
-    const { token, name, installCommands, uninstallCommands, dependencies } = req.body;
+    const { token, name, installCommands, uninstallCommands, updateCommands, dependencies } = req.body;
     try {
-        if (!token || !name || !installCommands || !uninstallCommands) {
-            return res.status(400).json({ err: 'Missing required fields: token, name, installCommands, uninstallCommands' });
+        if (!token || !name || !installCommands || !uninstallCommands || !updateCommands) {
+            return res.status(400).json({ err: 'Missing required fields: token, name, installCommands, uninstallCommands, updateCommands' });
         }
         const usr = await User.findOne({ token });
         if (!usr) {
@@ -198,6 +198,7 @@ app.post('/addPackage', async (req, res) => {
             name,
             installCommands,
             uninstallCommands,
+            updateCommands,
             dependencies: Array.isArray(dependencies) ? dependencies : [],
             owner: usr.name
         });

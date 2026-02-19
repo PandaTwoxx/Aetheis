@@ -23,6 +23,10 @@ func AddPackage(packageName string) error {
 	uninstallScript, _ := reader.ReadString('\n')
 	uninstallScript = strings.TrimSpace(uninstallScript)
 
+	fmt.Println("Enter the update script for the package:")
+	updateScript, _ := reader.ReadString('\n')
+	updateScript = strings.TrimSpace(updateScript)
+
 	fmt.Println("Enter the dependencies for the package (separated by spaces):")
 	dependencyList, _ := reader.ReadString('\n')
 	dependencyList = strings.TrimSpace(dependencyList)
@@ -50,6 +54,7 @@ func AddPackage(packageName string) error {
 		"name":             packageName,
 		"installCommands":  installScript,
 		"uninstallCommands": uninstallScript,
+		"updateCommands":   updateScript,
 		"dependencies":    dependencies,
 	})
 	if err != nil {
