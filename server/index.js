@@ -259,3 +259,6 @@ app.post('/deletePackage/:token/:name', async (req, res) => {
     }
 });
 // The duplicate app.listen() call has been removed from here.
+app.get('/', async (req, res) => {
+    res.send('Welcome to the Aetheis API');
+});
