@@ -46,6 +46,7 @@ func init() {
 	rootCmd.AddCommand(forceCmd)
 	rootCmd.AddCommand(listRegistryCmd)
 	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(upgradeCmd)
 	rootCmd.AddCommand(dryrunCmd)
 
 	// 2. Define global flags that apply to ALL commands

@@ -185,16 +185,47 @@ showDependents:
 	return nil
 }
 
-// PreviewUpdate shows what commands will be executed during update
+// PreviewUpdate shows what commands will be executed during aetheis update
 func PreviewUpdate(packageList []string) error {
+	fmt.Println("\n🔄 Updating aetheis:\n")
+	fmt.Println("  Method: Fetch aetheis update script from registry")
+	fmt.Println("  Endpoint: https://aetheis.vercel.app/update/aetheis")
+
+	// Fetch and display the update script preview
+	resp, err := http.Get("https://aetheis.vercel.app/update/aetheis")
+	if err == nil {
+		defer resp.Body.Close()
+		scriptBytes, _ := io.ReadAll(resp.Body)
+		scriptContent := strings.TrimSpace(string(scriptBytes))
+		if scriptContent != "" {
+			fmt.Println("\n  Script preview (first 500 chars):")
+			preview := scriptContent
+			if len(preview) > 500 {
+				preview = preview[:500] + "...[truncated]"
+			}
+			// Indent the script
+			for _, line := range strings.Split(preview, "\n") {
+				fmt.Printf("    %s\n", line)
+			}
+		}
+	}
+
+	fmt.Println("\n✅ This preview shows what will be executed to update aetheis.")
+	fmt.Println("   Run 'aetheis update' to proceed.\n")
+
+	return nil
+}
+
+// PreviewUpgrade shows what commands will be executed during upgrade
+func PreviewUpgrade(packageList []string) error {
 	store, err := LoadPackageStore()
 	if err != nil {
 		return fmt.Errorf("failed to load package store: %w", err)
 	}
 
 	if len(packageList) == 0 {
-		// Update all packages
-		fmt.Println("\n🔄 Updating all installed packages:\n")
+		// Upgrade all packages
+		fmt.Println("\n🔄 Upgrading all installed packages:\n")
 		installedPackages := store.ListPackages()
 
 		if len(installedPackages) == 0 {
@@ -202,16 +233,18 @@ func PreviewUpdate(packageList []string) error {
 			return nil
 		}
 
-		fmt.Printf("Packages to update (%d total):\n", len(installedPackages))
+		fmt.Printf("Packages to upgrade (%d total):\n", len(installedPackages))
 		for _, pkg := range installedPackages {
-			if pkg == "brew" || pkg == "brew-local" {
-				fmt.Printf("  • %s -> brew update\n", pkg)
+			if pkg == "aetheis" {
+				fmt.Printf("  • %s -> (skipped - use 'update' to update aetheis)\n", pkg)
+			} else if pkg == "brew" || pkg == "brew-local" {
+				fmt.Printf("  • %s -> brew upgrade\n", pkg)
 			} else {
-				fmt.Printf("  • %s -> Check for updates\n", pkg)
+				fmt.Printf("  • %s -> Fetch update script from registry\n", pkg)
 			}
 		}
 	} else {
-		fmt.Printf("\n🔄 Updating packages: %v\n", packageList)
+		fmt.Printf("\n🔄 Upgrading packages: %v\n", packageList)
 		fmt.Println(strings.Repeat("-", 50))
 
 		for _, pkg := range packageList {
@@ -222,20 +255,23 @@ func PreviewUpdate(packageList []string) error {
 				continue
 			}
 
-			if pkg == "brew" || pkg == "brew-local" {
-				fmt.Println("  Command: brew update")
+			if pkg == "aetheis" {
+				fmt.Println("  ⚠️  Cannot upgrade aetheis with upgrade command")
+				fmt.Println("  Use 'aetheis update' instead")
+			} else if pkg == "brew" || pkg == "brew-local" {
+				fmt.Println("  Command: brew upgrade " + pkg)
 			} else {
-				fmt.Println("  Method: Fetch latest version and update")
-				fmt.Printf("  Endpoint: https://aetheis.vercel.app/pkg/%s\n", pkg)
+				fmt.Println("  Method: Fetch update script from registry")
+				fmt.Printf("  Endpoint: https://aetheis.vercel.app/update/%s\n", pkg)
 			}
 		}
 	}
 
-	fmt.Println("\n✅ This preview shows what will be updated.")
+	fmt.Println("\n✅ This preview shows what will be upgraded.")
 	if len(packageList) > 0 {
-		fmt.Printf("   Run 'aetheis update %s' to proceed.\n", strings.Join(packageList, " "))
+		fmt.Printf("   Run 'aetheis upgrade %s' to proceed.\n", strings.Join(packageList, " "))
 	} else {
-		fmt.Println("   Run 'aetheis update' to proceed.\n")
+		fmt.Println("   Run 'aetheis upgrade' to proceed.\n")
 	}
 
 	return nil

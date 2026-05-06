@@ -11,27 +11,29 @@ import (
 
 var dryrunCmd = &cobra.Command{
 	Use:   "dryrun [action] [package]",
-	Short: "Preview commands that will run for install/uninstall/update operations.",
+	Short: "Preview commands that will run for install/uninstall/update/upgrade operations.",
 	Long: `
-The 'dryrun' command shows you exactly what commands will be executed when you install, uninstall, or update packages.
+The 'dryrun' command shows you exactly what commands will be executed when you install, uninstall, update, or upgrade packages.
 This is useful for understanding what changes will be made to your system before actually running them.
 
 Usage:
   aetheis dryrun install package-name
   aetheis dryrun uninstall package-name
-  aetheis dryrun update package-name
   aetheis dryrun update
+  aetheis dryrun upgrade [package-name]
 
 Examples:
   aetheis dryrun install nodejs
   aetheis dryrun uninstall python
   aetheis dryrun update
+  aetheis dryrun upgrade
+  aetheis dryrun upgrade ruby
 `,
 	Args: cobra.MinimumNArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			fmt.Fprintln(os.Stderr, "Error: Must specify an action (install, uninstall, or update).")
+			fmt.Fprintln(os.Stderr, "Error: Must specify an action (install, uninstall, update, or upgrade).")
 			cmd.Help()
 			os.Exit(1)
 		}
@@ -69,14 +71,21 @@ Examples:
 			}
 
 		case "update":
-			fmt.Printf("=== DRY RUN: Update Commands for %v ===\n\n", packageList)
+			fmt.Printf("=== DRY RUN: Update aetheis ===\n")
 			err := app.PreviewUpdate(packageList)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error previewing update: %v\n", err)
 			}
 
+		case "upgrade":
+			fmt.Printf("=== DRY RUN: Upgrade Commands for %v ===\n", packageList)
+			err := app.PreviewUpgrade(packageList)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error previewing upgrade: %v\n", err)
+			}
+
 		default:
-			fmt.Fprintf(os.Stderr, "Error: Unknown action '%s'. Must be 'install', 'uninstall', or 'update'.\n", action)
+			fmt.Fprintf(os.Stderr, "Error: Unknown action '%s'. Must be 'install', 'uninstall', 'update', or 'upgrade'.\n", action)
 			cmd.Help()
 			os.Exit(1)
 		}
