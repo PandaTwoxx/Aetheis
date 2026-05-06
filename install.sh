@@ -30,6 +30,7 @@ if [ "$MODE" == "local" ]; then
 else
     INSTALL_DIR="/usr/local/bin"
     echo -e "${YELLOW}👉 Running in SYSTEM mode. Installing to $INSTALL_DIR (requires sudo)${NC}"
+    echo -e "${RED}👉 Warning: Aetheis build for all users is deprecated and some features may not work properly${NC}"
 fi
 
 echo -e "🚀 Installing ${APP_NAME}..."
