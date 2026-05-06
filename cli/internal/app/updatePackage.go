@@ -88,6 +88,6 @@ func UpdatePackage(packageName string) error {
 	}
 
 	fmt.Println("Package updated successfully.")
-	
+
 	return nil
 }

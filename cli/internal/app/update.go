@@ -33,7 +33,7 @@ func Update(args []string) error {
 		}
 		for _, pkg := range store.ListPackages() {
 			fmt.Printf("Updating package: %s\n", pkg)
-			if pkg == "brew" || pkg == "brew-local"{
+			if pkg == "brew" || pkg == "brew-local" {
 				currentUser, err := user.Current()
 				if err != nil {
 					log.Fatalf("Package Update Failed: %v", err)
@@ -144,7 +144,7 @@ func Update(args []string) error {
 				updatePath := filepath.Join(cacheDir, "update_"+pkg+".sh")
 
 				_ = os.Remove(updatePath)
-				
+
 				// Write the full shell script to a file
 				scriptContent := shellScript
 				// Add shebang if not already present

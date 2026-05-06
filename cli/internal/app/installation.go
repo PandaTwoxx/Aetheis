@@ -125,7 +125,7 @@ func InstallPackage(packageName string, explicit bool) error {
 		installPath := filepath.Join(cacheDir, "install_"+packageName+".sh")
 
 		_ = os.Remove(installPath)
-		
+
 		// Write the full shell script to a file
 		scriptContent := shellScript
 		// Add shebang if not already present

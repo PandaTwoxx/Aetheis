@@ -65,12 +65,12 @@ func AddPackage(packageName string) error {
 	}
 
 	body, err := json.Marshal(map[string]interface{}{
-		"token":            token,
-		"name":             packageName,
-		"installCommands":  installScript,
+		"token":             token,
+		"name":              packageName,
+		"installCommands":   installScript,
 		"uninstallCommands": uninstallScript,
-		"updateCommands":   updateScript,
-		"dependencies":    dependencies,
+		"updateCommands":    updateScript,
+		"dependencies":      dependencies,
 	})
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func AddPackage(packageName string) error {
 	}
 
 	fmt.Println("Package added successfully.")
-	
+
 	return nil
 }
 
