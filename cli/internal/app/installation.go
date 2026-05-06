@@ -115,8 +115,8 @@ func InstallPackage(packageName string, explicit bool) error {
 			return fmt.Errorf("package installation failed: %w", err)
 		}
 
-		shellCommand := strings.TrimSpace(string(bodyBytes))
-		if shellCommand == "" {
+		shellScript := strings.TrimSpace(string(bodyBytes))
+		if shellScript == "" {
 			return errors.New("install command not found")
 		}
 
@@ -125,22 +125,21 @@ func InstallPackage(packageName string, explicit bool) error {
 		installPath := filepath.Join(cacheDir, "install_"+packageName+".sh")
 
 		_ = os.Remove(installPath)
-		// No need to Create then Open, just WriteFile or OpenFile with Create
-		fileInstruct, err := os.OpenFile(installPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+		
+		// Write the full shell script to a file
+		scriptContent := shellScript
+		// Add shebang if not already present
+		if !strings.HasPrefix(strings.TrimSpace(shellScript), "#!") {
+			scriptContent = "#!/bin/sh\n" + shellScript
+		}
 
+		err = os.WriteFile(installPath, []byte(scriptContent), 0755)
 		if err != nil {
-			// Handle error
 			log.Fatalf("Package Installation Failed: %v", err)
 			return err
 		}
 
-		// Prepend shebang as per previous fix
-		fileInstruct.Write([]byte("#!/bin/sh\n" + shellCommand + "\n"))
-
-		fileInstruct.Close()
-
-		exec.Command("chmod", "+x", installPath).Run()
-
+		// Execute the script
 		execCmd := exec.Command("/bin/sh", installPath)
 		// Connect stdout/stderr to see output
 		execCmd.Stdout = os.Stdout

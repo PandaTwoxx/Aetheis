@@ -210,7 +210,7 @@ app.post('/addPackage', async (req, res) => {
 });
 
 app.post('/updatePackage', async (req, res) => {
-    const { token, name, installCommands, uninstallCommands, dependencies } = req.body;
+    const { token, name, installCommands, uninstallCommands, updateCommands, dependencies } = req.body;
     try {
         if (!token || !name || !installCommands || !uninstallCommands) {
             return res.status(400).json({ err: 'Missing required fields: token, name, installCommands, uninstallCommands' });
@@ -228,6 +228,9 @@ app.post('/updatePackage', async (req, res) => {
         }
         pkg.installCommands = installCommands;
         pkg.uninstallCommands = uninstallCommands;
+        if (updateCommands) {
+            pkg.updateCommands = updateCommands;
+        }
         pkg.dependencies = Array.isArray(dependencies) ? dependencies : [];
         await pkg.save();
         res.send('Package updated successfully.');

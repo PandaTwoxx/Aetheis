@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 )
 
@@ -61,7 +63,7 @@ func UninstallPackage(packageName string) error {
 				fmt.Printf("Uninstalling via Homebrew: %s\n...", packageName)
 				exec.Command("brew", "uninstall", packageName).Run()
 			} else {
-				fmt.Printf("Uninstalling via Shell Command: %s\n...", sourceInfo)
+				fmt.Printf("Uninstalling via Shell Script\n...")
 				// Fetch uninstall script
 				resp, err := http.Get("https://aetheis.vercel.app/uninstall/" + packageName)
 				if err != nil {
@@ -72,27 +74,49 @@ func UninstallPackage(packageName string) error {
 					return err
 				}
 				uninstallBytes, _ := io.ReadAll(resp.Body)
-				shellCommand := string(uninstallBytes)
+				shellScript := string(uninstallBytes)
 
-				// FIX: The server sometimes sends `curl -fsSLO ... > ...`, which breaks because -O writes to file and stdout is empty.
-				shellCommand = strings.ReplaceAll(shellCommand, "curl -fsSLO", "curl -fsSL")
-				shellCommand = strings.ReplaceAll(shellCommand, "curl -O", "curl")
+				if shellScript != "" {
+					// Create a temporary file for the uninstall script
+					currentUser, err := user.Current()
+					if err != nil {
+						log.Printf("Warning: Could not get current user: %v. Running script directly.", err)
+						execCmd := exec.Command("sh", "-c", shellScript)
+						execCmd.Stdout = os.Stdout
+						execCmd.Stderr = os.Stderr
+						if err := execCmd.Run(); err != nil {
+							log.Printf("Warning: Uninstall script failed: %v. Removing from store anyway.", err)
+						}
+					} else {
+						cacheDir := filepath.Join(currentUser.HomeDir, ".aetheis", "cache")
+						_ = os.MkdirAll(cacheDir, 0755)
+						uninstallPath := filepath.Join(cacheDir, "uninstall_"+packageName+".sh")
+						_ = os.Remove(uninstallPath)
 
-				// FIX: The server sends `mkdir -p ~/.aetheis/uninstall`. We want to use `~/.aetheis/cache`.
-				shellCommand = strings.ReplaceAll(shellCommand, "~/.aetheis/uninstall", "~/.aetheis/cache")
+						// Write the full shell script to a file
+						scriptContent := shellScript
+						// Add shebang if not already present
+						if !strings.HasPrefix(strings.TrimSpace(shellScript), "#!") {
+							scriptContent = "#!/bin/sh\n" + shellScript
+						}
 
-				// FIX: The script writes to ~/.aetheis/cache/uninstall.sh but executes uninstall.sh (CWD).
-				shellCommand = strings.ReplaceAll(shellCommand, "/bin/bash uninstall.sh", "sed -i.bak 's/ execute_sudo/ /g' ~/.aetheis/cache/uninstall.sh && /bin/bash ~/.aetheis/cache/uninstall.sh")
-
-				// FIX: Shell doesn't expand '~' in '--path=~...' arguments. Use $HOME instead.
-				shellCommand = strings.ReplaceAll(shellCommand, "~/", "$HOME/")
-
-				if shellCommand != "" {
-					execCmd := exec.Command("sh", "-c", shellCommand)
-					execCmd.Stdout = os.Stdout
-					execCmd.Stderr = os.Stderr
-					if err := execCmd.Run(); err != nil {
-						log.Printf("Warning: Uninstall script failed: %v. Removing from store anyway.", err)
+						err = os.WriteFile(uninstallPath, []byte(scriptContent), 0755)
+						if err != nil {
+							log.Printf("Warning: Failed to write uninstall script: %v. Running inline.", err)
+							execCmd := exec.Command("sh", "-c", shellScript)
+							execCmd.Stdout = os.Stdout
+							execCmd.Stderr = os.Stderr
+							if err := execCmd.Run(); err != nil {
+								log.Printf("Warning: Uninstall script failed: %v. Removing from store anyway.", err)
+							}
+						} else {
+							execCmd := exec.Command("/bin/sh", uninstallPath)
+							execCmd.Stdout = os.Stdout
+							execCmd.Stderr = os.Stderr
+							if err := execCmd.Run(); err != nil {
+								log.Printf("Warning: Uninstall script failed: %v. Removing from store anyway.", err)
+							}
+						}
 					}
 				}
 			}

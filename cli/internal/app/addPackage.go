@@ -15,17 +15,32 @@ import (
 func AddPackage(packageName string) error {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Enter the install script for the package:")
-	installScript, _ := reader.ReadString('\n')
-	installScript = strings.TrimSpace(installScript)
+	fmt.Println("Enter the path to the install script:")
+	installScriptPath, _ := reader.ReadString('\n')
+	installScriptPath = strings.TrimSpace(installScriptPath)
 
-	fmt.Println("Enter the uninstall script for the package:")
-	uninstallScript, _ := reader.ReadString('\n')
-	uninstallScript = strings.TrimSpace(uninstallScript)
+	installScript, err := readScriptFile(installScriptPath)
+	if err != nil {
+		return fmt.Errorf("failed to read install script: %w", err)
+	}
 
-	fmt.Println("Enter the update script for the package:")
-	updateScript, _ := reader.ReadString('\n')
-	updateScript = strings.TrimSpace(updateScript)
+	fmt.Println("Enter the path to the uninstall script:")
+	uninstallScriptPath, _ := reader.ReadString('\n')
+	uninstallScriptPath = strings.TrimSpace(uninstallScriptPath)
+
+	uninstallScript, err := readScriptFile(uninstallScriptPath)
+	if err != nil {
+		return fmt.Errorf("failed to read uninstall script: %w", err)
+	}
+
+	fmt.Println("Enter the path to the update script:")
+	updateScriptPath, _ := reader.ReadString('\n')
+	updateScriptPath = strings.TrimSpace(updateScriptPath)
+
+	updateScript, err := readScriptFile(updateScriptPath)
+	if err != nil {
+		return fmt.Errorf("failed to read update script: %w", err)
+	}
 
 	fmt.Println("Enter the dependencies for the package (separated by spaces):")
 	dependencyList, _ := reader.ReadString('\n')
@@ -75,4 +90,25 @@ func AddPackage(packageName string) error {
 	fmt.Println("Package added successfully.")
 	
 	return nil
+}
+
+// readScriptFile reads a script file and returns its contents
+// It expands ~ to the user's home directory
+func readScriptFile(filePath string) (string, error) {
+	// Expand ~ to home directory
+	if strings.HasPrefix(filePath, "~") {
+		usr, err := user.Current()
+		if err != nil {
+			return "", err
+		}
+		filePath = filepath.Join(usr.HomeDir, filePath[1:])
+	}
+
+	// Read the file
+	scriptContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	return string(scriptContent), nil
 }

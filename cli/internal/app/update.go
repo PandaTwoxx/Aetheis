@@ -118,9 +118,10 @@ func Update(args []string) error {
 					log.Fatalf("Package Update Failed: %v", err)
 					return err
 				}
-				resp, err := http.Get("https://aetheis.vercel.app/install/" + pkg)
+				// Try to fetch update script first
+				resp, err := http.Get("https://aetheis.vercel.app/update/" + pkg)
 				if err != nil {
-					return fmt.Errorf("package installation failed: %w", err)
+					return fmt.Errorf("package update failed: %w", err)
 				}
 				defer resp.Body.Close()
 
@@ -130,36 +131,35 @@ func Update(args []string) error {
 
 				bodyBytes, err := io.ReadAll(resp.Body)
 				if err != nil {
-					return fmt.Errorf("package installation failed: %w", err)
+					return fmt.Errorf("package update failed: %w", err)
 				}
 
-				shellCommand := strings.TrimSpace(string(bodyBytes))
-				if shellCommand == "" {
-					return errors.New("install command not found")
+				shellScript := strings.TrimSpace(string(bodyBytes))
+				if shellScript == "" {
+					return errors.New("update command not found")
 				}
 
 				cacheDir := filepath.Join(currentUser.HomeDir, ".aetheis", "cache")
 				_ = os.MkdirAll(cacheDir, 0755) // Ensure cache dir exists
-				installPath := filepath.Join(cacheDir, "install_"+pkg+".sh")
+				updatePath := filepath.Join(cacheDir, "update_"+pkg+".sh")
 
-				_ = os.Remove(installPath)
-				// No need to Create then Open, just WriteFile or OpenFile with Create
-				fileInstruct, err := os.OpenFile(installPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
+				_ = os.Remove(updatePath)
+				
+				// Write the full shell script to a file
+				scriptContent := shellScript
+				// Add shebang if not already present
+				if !strings.HasPrefix(strings.TrimSpace(shellScript), "#!") {
+					scriptContent = "#!/bin/sh\n" + shellScript
+				}
 
+				err = os.WriteFile(updatePath, []byte(scriptContent), 0755)
 				if err != nil {
-					// Handle error
 					log.Fatalf("Package Update Failed: %v", err)
 					return err
 				}
 
-				// Prepend shebang as per previous fix
-				fileInstruct.Write([]byte("#!/bin/sh\n" + shellCommand + "\n"))
-
-				fileInstruct.Close()
-
-				exec.Command("chmod", "+x", installPath).Run()
-
-				execCmd := exec.Command("/bin/sh", installPath)
+				// Execute the script
+				execCmd := exec.Command("/bin/sh", updatePath)
 				// Connect stdout/stderr to see output
 				execCmd.Stdout = os.Stdout
 				execCmd.Stderr = os.Stderr
