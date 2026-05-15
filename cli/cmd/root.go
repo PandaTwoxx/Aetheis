@@ -49,6 +49,7 @@ func init() {
 	rootCmd.AddCommand(upgradeCmd)
 	rootCmd.AddCommand(dryrunCmd)
 	rootCmd.AddCommand(cleanCmd)
+	rootCmd.AddCommand(forcePackageRemoveCmd)
 
 	// 2. Define global flags that apply to ALL commands
 	rootCmd.PersistentFlags().StringP("config", "c", "", "Config package installation path (default is $HOME/.aetheis/)")
