@@ -11,10 +11,18 @@ import (
 
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
-	Short: "Clear the Aetheis cache directory.",
+	Short: "Clear the Aetheis cache directory and remove unused dependencies.",
 	Long: `
-The 'clean' command removes all cached files stored in ~/.aetheis/cache.
-This can help free up disk space or resolve cache-related issues.
+The 'clean' command performs two operations:
+
+1. Removes all cached files stored in ~/.aetheis/cache to free up disk space
+   or resolve cache-related issues.
+
+2. Identifies and uninstalls unused dependencies - packages that were installed
+   as dependencies of other packages but are no longer needed after those packages
+   have been uninstalled.
+
+This helps maintain a clean and efficient package environment.
 `,
 
 	Run: func(cmd *cobra.Command, args []string) {
