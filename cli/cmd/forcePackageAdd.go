@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/PandaTwoxx/aetheis/internal/app"
 	"os"
+
+	"github.com/PandaTwoxx/aetheis/internal/app"
+	"github.com/spf13/cobra"
 )
 
 var forceCmd = &cobra.Command{
@@ -14,6 +15,7 @@ var forceCmd = &cobra.Command{
 For example, to force add a package:
   aetheis forcePackageAdd mypackage`,
 
+	Args: cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		err := app.ForcePackageAdd(args[0])
